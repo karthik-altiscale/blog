@@ -15,6 +15,7 @@
   * Server which listens on port 80 by running `nc -l 80`
 
 ## State: LISTEN
+----
 
   Nothing much to explain here, server is LISTENing on port any_ip:80
   
@@ -22,13 +23,14 @@
 
 
 ## State: SYN SENT
+----
   This happens when a client initiates a 3 way handshake but there is not response (btw no response is different from a reset [R] response or a Rejected icmp)
 
   We can simulate this by dropping the SYN (actually all) packets on port 80 on the server
   
   ```[root@B ~]# iptables -A INPUT  -p tcp --destination-port 80 -j DROP```
 
-  Now when I `telnet server 80` tcpdump on **Client** shows syn [S] packet is sent and since no response there are resends
+  Running ```telnet server 80```, tcpdump on **Client** shows syn [S] packet is sent and since no response there are resends
 
   ![Alt text]({{ site.baseurl }}/assets/img/tcpdump_syn_sent_client.png)
 
