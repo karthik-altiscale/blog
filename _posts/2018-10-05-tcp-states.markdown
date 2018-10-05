@@ -13,11 +13,4 @@
   * Server which listens on port 80 by running `nc -l 80`
 
 ## State: LISTEN
-  ![Alt text]({{ site.baseurl }}/assets/img/listen.png){:width="50%"}
-
-
-
-{% assign image_files = site.static_files | where: "image", true %}
-{% for myimage in image_files %}
-  {{ myimage.path }}
-{% endfor %}
+  ![Alt text]({{ site.baseurl }}/assets/img/listen.png)
