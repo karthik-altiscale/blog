@@ -1,9 +1,16 @@
 
-Emulating TCP States
-====================
+# Emulating TCP States
 
-TCP States diagram
--------------------
-  There are several drawings and explanations about TCP states in the internet. I am not explaining them here. There are several ways a TCP connection can go to a particular state. In this post I am attempting to use IPTables rules that block/allow packets making the TCP connection to go to particular state and view it using `netstat`
+## TCP States diagram
 
+  There are several articles, drawings and explanations in the internet about the various TCP states, and there are many reasons TCP can go into those states.
 
+  I am attempting to use IPTables rules that block/allow packets making the TCP connection to go to particular state and view it using `netstat`
+
+## Setup  
+  Pretty straight forward setup. I have 2 VMs in a LAN
+  * Client which runs `telnet server_ip 80`
+  * Server which listens on port 80 by running `nc -l 80`
+
+## State: LISTEN
+  ![Alt text]({{ site.baseurl }}/images/listen.png){:width="50%"}
