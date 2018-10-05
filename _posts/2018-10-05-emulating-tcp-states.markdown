@@ -1,8 +1,4 @@
 
-
-# Emulating TCP States
------
-
 ## TCP States diagram
 
   There are several articles, drawings and explanations in the internet about the various TCP states, and there are many reasons TCP can go into those states.
