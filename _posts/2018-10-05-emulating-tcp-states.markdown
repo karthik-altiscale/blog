@@ -1,27 +1,28 @@
 
 ## TCP States diagram
 
-  There are several articles, drawings and explanations in the internet about the various TCP states, and there are many reasons TCP can go into those states.
-
-  I am attempting to use IPTables rules that block/allow packets making the TCP connection to go to particular state and view it using `netstat`
+There are several articles, drawings and explanations in the internet about the various TCP states.  [Here](https://upload.wikimedia.org/wikipedia/en/5/57/Tcp_state_diagram.png) is one from wikipedia
+There are so many reasons a TCP connection can go into those states. I am attempting make the TCP connection to go to those states using some IPTables and other hacks.
 
 ## Setup  
-  Pretty straight forward setup. I have 2 VMs in a LAN
-  * Client which runs `telnet server_ip 80`
-  * Server which listens on port 80 by running `nc -l 80`
-
+Pretty straight forward setup. I have 2 VMs in a LAN
+* Client which runs `telnet server_ip 80`
+* Server which listens on port 80 by running `nc -l 80`
 
 ### State: LISTEN
 ----
-  **who goes to this state:** Server
+&nbsp;
 
-  Nothing much to explain here, server is LISTENing on port any_ip:80
+**who goes to this state:** Server
+
+Nothing much to explain here, server is LISTENing on port any_ip:80
   
-  ![Alt text]({{ site.baseurl }}/assets/img/listen.png)
+![Alt text]({{ site.baseurl }}/assets/img/listen.png)
 
 
 ### State: SYN SENT
 ----
+&nbsp;
 
   **who goes to this state:** Client
 
