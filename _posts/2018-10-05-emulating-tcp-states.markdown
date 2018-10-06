@@ -13,6 +13,7 @@
 
 ### State: LISTEN
 ----
+  **who goes to this state:** Server
 
   Nothing much to explain here, server is LISTENing on port any_ip:80
   
@@ -22,13 +23,15 @@
 ### State: SYN SENT
 ----
 
-  This happens when a client initiates a 3 way handshake but there is not response (btw no response is different from a reset [R] response or a Rejected icmp)
+  **who goes to this state:** Client
 
-  We can simulate this by dropping the SYN (actually all) packets on port 80 on the server
+  **When:** a client initiates a 3 way handshake but there is no response (btw no response is different from a reset [R] response or a Rejected ICMP)
+
+  **Simulate:** We can simulate this by dropping the SYN (actually all) packets on port 80 on the server
   
   ```[root@B ~]# iptables -A INPUT  -p tcp --destination-port 80 -j DROP```
 
-  Running ```telnet server 80```, tcpdump on **Client** shows syn [S] packet is sent and since no response there are resends
+  **Observe:** Running ```telnet server 80```, tcpdump on *Client* shows syn [S] packet is sent and since no response there are resends
 
   ![Alt text]({{ site.baseurl }}/assets/img/tcpdump_syn_sent_client.png)
 
@@ -36,24 +39,28 @@
 
   ![Alt text]({{ site.baseurl }}/assets/img/tcpdump_syn_sent_server.png)
 
-  Client has sent [S] and now is in **SYN_SENT** state
+  **Result:**
+  Client has sent [S] and now is in *SYN_SENT* state
 
   ![Alt text]({{ site.baseurl }}/assets/img/netstat_syn_sent_client.png)
 
 
 ### State: SYN RECEIVED
 ----
+  **who goes to this state:** Server
 
-  This happens when Server receives [S] and is interested in responding back with [S.] (syn/ack) but client is dead to receive the [S.] .... wait a second !!! why does it sound familiar ?????? Thats **SYN FLOOD**
+  **When:** Server receives [S] and is interested in responding back with [S.] (syn/ack) but client is dead to receive the [S.] .... wait a second !!! why does it sound familiar ?????? Thats **SYN FLOOD**
 
-  We can simulate this situation by dropping the packets coming from the server 
+  **Simulate:** We can simulate this situation by dropping the packets coming from the server 
 
   btw `iptables -F` for sanity
   
 
   ```[root@Client ~]# iptables -A INPUT -p tcp --source-port 80 -j DROP```
 
-  Running ```telnet server 80```, tcpdump on **Client** shows syn [S] packet is sent and Server responds with [S.] (syn/ack) but Client side filtered and dropped by our IPTables rule and so the packets are never delivered to the protocol layer ([detailed explanation here](https://blog.packagecloud.io/eng/2016/06/22/monitoring-tuning-linux-networking-stack-receiving-data/#__netif_receive_skb_core-delivers-data-to-packet-taps-and-protocol-layers)).
+  **Observe:**
+
+  Running ```telnet server 80```, tcpdump on *Client* shows syn [S] packet is sent and Server responds with [S.] (syn/ack) but Client side filtered and dropped by our IPTables rule and so the packets are never delivered to the protocol layer ([detailed explanation here](https://blog.packagecloud.io/eng/2016/06/22/monitoring-tuning-linux-networking-stack-receiving-data/#__netif_receive_skb_core-delivers-data-to-packet-taps-and-protocol-layers)).
 
   ![Alt text]({{ site.baseurl }}/assets/img/tcpdump_syn_recv_client.png)
 
@@ -61,7 +68,9 @@
 
   ![Alt text]({{ site.baseurl }}/assets/img/tcpdump_syn_recv_server.png)
 
-  Server has sent [S.] but no [.] (ack) from client is received yet. Server goes into **SYN_RECV** state
+  **Result:**
+
+  Server has sent [S.] but no [.] (ack) from client is received yet. Server goes into *SYN_RECV* state
   
   ![Alt text]({{ site.baseurl }}/assets/img/netstat_syn_recv_server.png)
 
@@ -69,12 +78,13 @@
 ### State: ESTABLISHED
 ----
 
-  This happens when 3 way handshake is successfully completed, both sides' TCP connection state becomes ESTABLISHED
+  **who goes to this state:** Both server and client
 
-  btw `iptables -F` for sanity
+  **When:** 3 way handshake is successfully completed, both sides' TCP connection state becomes ESTABLISHED
 
-  enjoy the client and service side 3 way handshake tcpdump view
+  btw please `iptables -F` (or `-j ACCEPT` on port 80)
 
+  **Observe:**
   Server side 3 way handshake went successful
 
   ![Alt text]({{ site.baseurl }}/assets/img/tcpdump_established_server.png)
@@ -82,6 +92,8 @@
   Client side 3 way handshake went successful
 
   ![Alt text]({{ site.baseurl }}/assets/img/tcpdump_established_client.png)
+
+  **Result:**
 
   **ESTABLISHED** on Server
 
@@ -94,6 +106,38 @@
 ### State: FIN WAIT 1
 ----
 
-  This happens after 3 way handshake (and data transfer), when client or server wants to terminate the TCP connection Client (in our example) sends a FIN and goes to FIN_WAIT1 state. If server does not respond with an ACK  client continues to  stay in FIN_WAIT1 state
+  **who goes to this state:** whoever initiates connection termination (can be either server or client)
 
+  **When:** After 3 way handshake (and data transfer), when client or server wants to terminate the TCP connection Client (in our example) sends a FIN and goes to FIN_WAIT1 state. If server does not respond with an ACK  client continues to  stay in FIN_WAIT1 state
 
+  **Simulate:**
+  
+    Remove all rules 
+
+``` [root@Server ~]# iptables -F ```
+
+    so that the 3 way handshake happens successfully
+
+```[root@Client ~]# telnet 192.168.2.11 80
+Trying 192.168.2.11...
+Connected to 192.168.2.11.
+Escape character is '^]'.```
+
+  now block the port 80 (or kill the server or )
+
+```[root@Server ~]# iptables -A INPUT -p tcp --destination-port 80 -j DROP```
+
+  **Observe:**
+
+  Client sends [F] (fin) packet
+  
+  ![Alt text]({{ site.baseurl }}/assets/img/tcpdump_fin_wait_client.png)
+
+  but since no [.] (ack) response from server client keeps resending [F]
+
+  **Result:**
+  The *Client* goes into FIN_WAIT state till it hears back an ack from server
+  ![Alt text]({{ site.baseurl }}/assets/img/netstat_fin_wait_client.png)
+  
+  *Note:* the server still thinks the TCP socket is open and it can send or receive packets. This is bad
+  ![Alt text]({{ site.baseurl }}/assets/img/netstat_fin_wait_server.png)
