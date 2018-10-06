@@ -95,49 +95,90 @@
 
   **Result:**
 
-  **ESTABLISHED** on Server
+  *ESTABLISHED* on Server
 
   ![Alt text]({{ site.baseurl }}/assets/img/netstat_established_server.png)
 
-  **ESTABLISHED** on Client
+  *ESTABLISHED* on Client
 
   ![Alt text]({{ site.baseurl }}/assets/img/netstat_established_client.png)
 
 ### State: FIN WAIT 1
 ----
 
-  **who goes to this state:** whoever initiates connection termination (can be either server or client)
+  **who goes to this state:** whoever initiates connection termination (in our case Client)
 
   **When:** After 3 way handshake (and data transfer), when client or server wants to terminate the TCP connection Client (in our example) sends a FIN and goes to FIN_WAIT1 state. If server does not respond with an ACK  client continues to  stay in FIN_WAIT1 state
 
   **Simulate:**
-  
-    Remove all rules 
+Remove all rules `[root@Server ~]# iptables -F`  so that the 3 way handshake happens successfully
 
-``` [root@Server ~]# iptables -F ```
-
-    so that the 3 way handshake happens successfully
-
-```[root@Client ~]# telnet 192.168.2.11 80
+```
+[root@Client ~]# telnet 192.168.2.11 80
 Trying 192.168.2.11...
 Connected to 192.168.2.11.
-Escape character is '^]'.```
+Escape character is '^]'.
+```
+now block the port 80 on server
 
-  now block the port 80 (or kill the server or )
+```
+[root@Server ~]# iptables -A INPUT -p tcp --destination-port 80 -j DROP
+```
 
-```[root@Server ~]# iptables -A INPUT -p tcp --destination-port 80 -j DROP```
+**Observe:**
 
-  **Observe:**
+Client sends [F] (fin) packet
 
-  Client sends [F] (fin) packet
-  
-  ![Alt text]({{ site.baseurl }}/assets/img/tcpdump_fin_wait_client.png)
+![Alt text]({{ site.baseurl }}/assets/img/tcpdump_fin_wait_client.png)
 
-  but since no [.] (ack) response from server client keeps resending [F]
+but since no [.] (ack) response from server client keeps resending [F]
 
-  **Result:**
-  The *Client* goes into FIN_WAIT state till it hears back an ack from server
-  ![Alt text]({{ site.baseurl }}/assets/img/netstat_fin_wait_client.png)
-  
-  *Note:* the server still thinks the TCP socket is open and it can send or receive packets. This is bad
-  ![Alt text]({{ site.baseurl }}/assets/img/netstat_fin_wait_server.png)
+**Result:**
+The *Client* goes into FIN_WAIT state till it hears back an ack from server
+![Alt text]({{ site.baseurl }}/assets/img/netstat_fin_wait_client.png)
+
+*Note:* the server still thinks the TCP socket is open and it can send or receive packets. This is bad
+![Alt text]({{ site.baseurl }}/assets/img/netstat_fin_wait_server.png)
+
+
+### State: CLOSE WAIT
+**who goes to this state:** whoever receives connection termination (in our case Server)
+
+**When:** During the TCP Termination process, the party who receives the FIN (in our case Server), acknowledges and as part of terminating its side of socket it sends its own FIN bundled together [F.].A FIN packet is sent by calling the `close()`  (may be its called CLOSE_WAIT for that reason ??? waiting for close() ??? idk) 
+
+**Simulate:**
+
+To simulate this we need a buggy code that after receiving FIN packet WON'T run close() on that TCP socket ... [here is a detailed blog](https://blog.cloudflare.com/this-is-strictly-a-violation-of-the-tcp-specification).
+
+Actually I found another way to reproduce *socket leakage*
+
+As usual on the server `nc -l 80`
+and 
+on the client `telnet 192.168.2.11 80`
+you see ESTABLISHED connection with PID
+
+![Alt text]({{ site.baseurl }}/assets/img/netstat_close_wait_established.png)
+
+now open one more connection from client `telnet 192.168.2.11 80`. There are 2 ESTABLISHED connections but if you notice the second connection *with port 40658* is NOT bound to any process. I am not sure if this is a bug in `nc` or this is how its supposed to work.
+
+![Alt text]({{ site.baseurl }}/assets/img/netstat_close_wait_established_2.png)
+
+I tried strace and `strace -f -p shell_pid`, no code executes (and hence no close() called) when I kill the tcp socket with port 40658 on the client. 
+
+When I do so, tcpdump shows Server receives FIN packet and responses with [.] (ack), Server does not send its FIN
+
+![Alt text]({{ site.baseurl }}/assets/img/tcpdump_close_wait_server.png)
+
+**Result:**
+and hence waiting for close()
+
+![Alt text]({{ site.baseurl }}/assets/img/netstat_close_wait_server.png)
+
+
+### State: FIN WAIT 2
+
+**who goes to this state:** party who was in FIN WAIT 1  
+
+**when** the above happens the client goes into FIN WAIT 2 
+
+![Alt text]({{ site.baseurl }}/assets/img/netstat_close_wait_client_fin_wait2.png)
