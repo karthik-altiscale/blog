@@ -142,6 +142,8 @@ The *Client* goes into FIN_WAIT state till it hears back an ack from server
 
 
 ### State: CLOSE WAIT
+----
+
 **who goes to this state:** whoever receives connection termination (in our case Server)
 
 **When:** During the TCP Termination process, the party who receives the FIN (in our case Server), acknowledges and as part of terminating its side of socket it sends its own FIN bundled together [F.].A FIN packet is sent by calling the `close()`  (may be its called CLOSE_WAIT for that reason ??? waiting for close() ??? idk) 
@@ -176,6 +178,7 @@ and hence waiting for close()
 
 
 ### State: FIN WAIT 2
+----
 
 **who goes to this state:** party who was in FIN WAIT 1  
 
