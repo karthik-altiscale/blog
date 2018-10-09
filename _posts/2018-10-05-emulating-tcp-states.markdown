@@ -310,3 +310,8 @@ Connection closed.
 **Result**
 
 ![Alt text]({{ site.baseurl }}/assets/img/netstat_time_wait.png)
+
+
+-----
+
+I am using issues as [Comments Section](https://github.com/karthik-altiscale/blog/issues/1) 
