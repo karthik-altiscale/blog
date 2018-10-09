@@ -289,7 +289,7 @@ block the port
 ### State: TIME WAIT
 ----
 
-** Who goes to this state:** party who initated the tcp termination first
+**Who goes to this state:** party who initated the tcp termination first
 
 **When:** the tcp termination is successfully done on both sides
 
